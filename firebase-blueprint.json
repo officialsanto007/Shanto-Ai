@@ -1,0 +1,206 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Authenticated agency user profile and AI assistant configuration.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Firebase Auth UID of the owner." },
+        "displayName": { "type": "string", "description": "User display name." },
+        "email": { "type": "string", "description": "User email address." },
+        "aiAssistantMode": {
+          "type": "string",
+          "enum": ["MANUAL_APPROVAL", "AUTHORIZED_AUTO_REPLY"],
+          "description": "AI reply mode."
+        },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp on creation." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp on update." }
+      },
+      "required": ["userId", "displayName", "aiAssistantMode", "createdAt", "updatedAt"]
+    },
+    "ShopifyLead": {
+      "title": "ShopifyLead",
+      "description": "Discovered USA Shopify store lead with website audit and multi-channel outreach status.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "storeName": { "type": "string" },
+        "websiteUrl": { "type": "string" },
+        "niche": { "type": "string" },
+        "location": { "type": "string" },
+        "publicEmail": { "type": "string" },
+        "publicPhone": { "type": "string" },
+        "instagramUsername": { "type": "string" },
+        "instagramProfileUrl": { "type": "string" },
+        "instagramUserId": { "type": "string" },
+        "whatsappNumber": { "type": "string" },
+        "whatsappBusinessName": { "type": "string" },
+        "whatsappHasConsent": { "type": "boolean" },
+        "whatsappOptedOut": { "type": "boolean" },
+        "whatsappWithinWindow": { "type": "boolean" },
+        "instagramApiEligible": { "type": "boolean" },
+        "crmStage": {
+          "type": "string",
+          "enum": ["DISCOVERED", "AUDITED", "OUTREACH_READY", "CONTACTED", "REPLIED", "INTERESTED", "QUALIFIED", "CONVERTED", "OPTED_OUT"]
+        },
+        "auditScore": { "type": "integer" },
+        "auditSummary": { "type": "string" },
+        "auditOpportunities": { "type": "array" },
+        "auditSignals": { "type": "array" },
+        "instagramStatus": {
+          "type": "string",
+          "enum": ["DRAFT", "AWAITING_APPROVAL", "ELIGIBLE_TO_SEND", "SENT", "DELIVERED", "REPLIED", "FAILED", "NOT_ELIGIBLE"]
+        },
+        "whatsappStatus": {
+          "type": "string",
+          "enum": ["DRAFT", "AWAITING_APPROVAL", "ELIGIBLE_TO_SEND", "SENT", "DELIVERED", "READ", "REPLIED", "FAILED", "NOT_ELIGIBLE"]
+        },
+        "lastContactChannel": { "type": "string" },
+        "lastContactAt": { "type": "string", "format": "date-time" },
+        "followUpNeeded": { "type": "boolean" },
+        "needsHumanHandoff": { "type": "boolean" },
+        "prospectIntent": {
+          "type": "string",
+          "enum": ["NONE", "INTERESTED", "QUESTION", "OBJECTION", "OPT_OUT"]
+        },
+        "manualOutreachNotes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "storeName", "websiteUrl", "crmStage", "createdAt", "updatedAt"]
+    },
+    "OutreachDraft": {
+      "title": "OutreachDraft",
+      "description": "Personalized Instagram DM or WhatsApp outreach proposal draft.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "leadId": { "type": "string" },
+        "channel": { "type": "string", "enum": ["INSTAGRAM", "WHATSAPP"] },
+        "greeting": { "type": "string" },
+        "businessName": { "type": "string" },
+        "websiteName": { "type": "string" },
+        "websiteProblems": { "type": "array" },
+        "recommendedImprovements": { "type": "array" },
+        "serviceIntroduction": { "type": "string" },
+        "callToAction": { "type": "string" },
+        "tone": { "type": "string", "enum": ["FRIENDLY", "PROFESSIONAL", "PREMIUM_AGENCY", "CASUAL", "SHORT_DIRECT"] },
+        "messageLength": { "type": "string", "enum": ["SHORT", "MEDIUM", "DETAILED"] },
+        "generatedMessage": { "type": "string" },
+        "templateName": { "type": "string" },
+        "status": {
+          "type": "string",
+          "enum": ["DRAFT", "AWAITING_APPROVAL", "ELIGIBLE_TO_SEND", "SENT", "DELIVERED", "READ", "REPLIED", "FAILED", "NOT_ELIGIBLE"]
+        },
+        "apiConfirmed": { "type": "boolean" },
+        "externalMessageId": { "type": "string" },
+        "errorMessage": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "leadId", "channel", "generatedMessage", "status", "apiConfirmed", "createdAt", "updatedAt"]
+    },
+    "ConversationThread": {
+      "title": "ConversationThread",
+      "description": "Unified inbox thread for Instagram or WhatsApp lead conversation.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "leadId": { "type": "string" },
+        "storeName": { "type": "string" },
+        "channel": { "type": "string", "enum": ["INSTAGRAM", "WHATSAPP"] },
+        "recipientHandleOrPhone": { "type": "string" },
+        "externalConversationId": { "type": "string" },
+        "isApiEligible": { "type": "boolean" },
+        "withinServiceWindow": { "type": "boolean" },
+        "lastMessagePreview": { "type": "string" },
+        "lastMessageDirection": { "type": "string", "enum": ["INBOUND", "OUTBOUND"] },
+        "deliveryStatus": {
+          "type": "string",
+          "enum": ["PENDING", "SENT", "DELIVERED", "READ", "REPLIED", "FAILED", "MANUAL_ONLY"]
+        },
+        "unreadCount": { "type": "integer" },
+        "aiSuggestedReply": { "type": "string" },
+        "aiSuggestedServices": { "type": "array" },
+        "aiDetectedIntent": { "type": "string" },
+        "needsHumanHandoff": { "type": "boolean" },
+        "followUpNeeded": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "leadId", "storeName", "channel", "deliveryStatus", "createdAt", "updatedAt"]
+    },
+    "ChatMessage": {
+      "title": "ChatMessage",
+      "description": "Individual message inside a unified inbox conversation.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "conversationId": { "type": "string" },
+        "leadId": { "type": "string" },
+        "channel": { "type": "string", "enum": ["INSTAGRAM", "WHATSAPP"] },
+        "direction": { "type": "string", "enum": ["INBOUND", "OUTBOUND"] },
+        "body": { "type": "string" },
+        "senderName": { "type": "string" },
+        "status": {
+          "type": "string",
+          "enum": ["DRAFT", "SENT", "DELIVERED", "READ", "FAILED", "RECEIVED"]
+        },
+        "apiConfirmed": { "type": "boolean" },
+        "externalMessageId": { "type": "string" },
+        "aiGenerated": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "conversationId", "leadId", "channel", "direction", "body", "status", "apiConfirmed", "createdAt"]
+    },
+    "ChannelIntegration": {
+      "title": "ChannelIntegration",
+      "description": "Non-secret connection status and metadata for Instagram Professional and WhatsApp Business APIs.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "channel": { "type": "string", "enum": ["INSTAGRAM", "WHATSAPP"] },
+        "connectionStatus": { "type": "string", "enum": ["CONNECTED", "TOKEN_EXPIRED", "DISCONNECTED"] },
+        "accountName": { "type": "string" },
+        "accountHandleOrPhone": { "type": "string" },
+        "profileImageUrl": { "type": "string" },
+        "businessAccountId": { "type": "string" },
+        "phoneNumberId": { "type": "string" },
+        "wabaId": { "type": "string" },
+        "permissions": { "type": "array" },
+        "webhookVerified": { "type": "boolean" },
+        "approvedTemplates": { "type": "array" },
+        "tokenExpiresAtMillis": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "channel", "connectionStatus", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Authenticated user profile and AI assistant mode settings."
+    },
+    "/users/{userId}/leads/{leadId}": {
+      "schema": { "$ref": "#/entities/ShopifyLead" },
+      "description": "User-scoped Shopify store leads, audits, and CRM pipeline state."
+    },
+    "/users/{userId}/outreachDrafts/{draftId}": {
+      "schema": { "$ref": "#/entities/OutreachDraft" },
+      "description": "User-scoped personalized Instagram DM and WhatsApp outreach drafts."
+    },
+    "/users/{userId}/conversations/{conversationId}": {
+      "schema": { "$ref": "#/entities/ConversationThread" },
+      "description": "User-scoped unified inbox conversation threads."
+    },
+    "/users/{userId}/conversations/{conversationId}/messages/{messageId}": {
+      "schema": { "$ref": "#/entities/ChatMessage" },
+      "description": "Messages belonging to a user's conversation thread."
+    },
+    "/users/{userId}/integrations/{channelId}": {
+      "schema": { "$ref": "#/entities/ChannelIntegration" },
+      "description": "Non-secret Meta Instagram and WhatsApp Business integration metadata."
+    }
+  }
+}

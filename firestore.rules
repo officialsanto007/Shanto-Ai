@@ -1,0 +1,351 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Reusable hardened global helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidString(val, minLen, maxLen) {
+      return val is string && val.size() >= minLen && val.size() <= maxLen;
+    }
+
+    function isValidOptionalString(data, key, maxLen) {
+      return !(key in data) || (data[key] is string && data[key].size() <= maxLen);
+    }
+
+    function isValidBoundedStringList(data, key, maxSize) {
+      return !(key in data) || (
+        data[key] is list &&
+        data[key].size() <= maxSize &&
+        (data[key].size() == 0 || data[key][0] is string)
+      );
+    }
+
+    function isValidTimestampField(val) {
+      return val is timestamp && val <= request.time;
+    }
+
+    // Entity Validators
+    function isValidUserProfile(data, userId) {
+      return data.userId == userId &&
+             isValidString(data.displayName, 0, 120) &&
+             isValidOptionalString(data, 'email', 200) &&
+             data.aiAssistantMode in ['MANUAL_APPROVAL', 'AUTHORIZED_AUTO_REPLY'] &&
+             isValidTimestampField(data.createdAt) &&
+             isValidTimestampField(data.updatedAt);
+    }
+
+    function isValidShopifyLead(data, userId) {
+      return data.userId == userId &&
+             isValidString(data.storeName, 1, 160) &&
+             isValidString(data.websiteUrl, 1, 500) &&
+             isValidOptionalString(data, 'niche', 120) &&
+             isValidOptionalString(data, 'location', 160) &&
+             isValidOptionalString(data, 'publicEmail', 200) &&
+             isValidOptionalString(data, 'publicPhone', 60) &&
+             isValidOptionalString(data, 'instagramUsername', 100) &&
+             isValidOptionalString(data, 'instagramProfileUrl', 300) &&
+             isValidOptionalString(data, 'instagramUserId', 128) &&
+             isValidOptionalString(data, 'whatsappNumber', 60) &&
+             isValidOptionalString(data, 'whatsappBusinessName', 160) &&
+             (!('whatsappHasConsent' in data) || data.whatsappHasConsent is bool) &&
+             (!('whatsappOptedOut' in data) || data.whatsappOptedOut is bool) &&
+             (!('whatsappWithinWindow' in data) || data.whatsappWithinWindow is bool) &&
+             (!('instagramApiEligible' in data) || data.instagramApiEligible is bool) &&
+             data.crmStage in ['DISCOVERED', 'AUDITED', 'OUTREACH_READY', 'CONTACTED', 'REPLIED', 'INTERESTED', 'QUALIFIED', 'CONVERTED', 'OPTED_OUT'] &&
+             (!('auditScore' in data) || (data.auditScore is int && data.auditScore >= 0 && data.auditScore <= 100)) &&
+             isValidOptionalString(data, 'auditSummary', 3000) &&
+             isValidBoundedStringList(data, 'auditOpportunities', 10) &&
+             isValidBoundedStringList(data, 'auditSignals', 15) &&
+             (!('instagramStatus' in data) || data.instagramStatus in ['DRAFT', 'AWAITING_APPROVAL', 'ELIGIBLE_TO_SEND', 'SENT', 'DELIVERED', 'REPLIED', 'FAILED', 'NOT_ELIGIBLE']) &&
+             (!('whatsappStatus' in data) || data.whatsappStatus in ['DRAFT', 'AWAITING_APPROVAL', 'ELIGIBLE_TO_SEND', 'SENT', 'DELIVERED', 'READ', 'REPLIED', 'FAILED', 'NOT_ELIGIBLE']) &&
+             isValidOptionalString(data, 'lastContactChannel', 40) &&
+             (!('lastContactAt' in data) || data.lastContactAt == null || isValidTimestampField(data.lastContactAt)) &&
+             (!('followUpNeeded' in data) || data.followUpNeeded is bool) &&
+             (!('needsHumanHandoff' in data) || data.needsHumanHandoff is bool) &&
+             (!('prospectIntent' in data) || data.prospectIntent in ['NONE', 'INTERESTED', 'QUESTION', 'OBJECTION', 'OPT_OUT']) &&
+             isValidOptionalString(data, 'manualOutreachNotes', 2000) &&
+             isValidTimestampField(data.createdAt) &&
+             isValidTimestampField(data.updatedAt);
+    }
+
+    function isValidOutreachDraft(data, userId) {
+      return data.userId == userId &&
+             isValidString(data.leadId, 1, 128) &&
+             data.channel in ['INSTAGRAM', 'WHATSAPP'] &&
+             isValidOptionalString(data, 'greeting', 300) &&
+             isValidOptionalString(data, 'businessName', 200) &&
+             isValidOptionalString(data, 'websiteName', 300) &&
+             isValidBoundedStringList(data, 'websiteProblems', 10) &&
+             isValidBoundedStringList(data, 'recommendedImprovements', 10) &&
+             isValidOptionalString(data, 'serviceIntroduction', 1000) &&
+             isValidOptionalString(data, 'callToAction', 500) &&
+             (!('tone' in data) || data.tone in ['FRIENDLY', 'PROFESSIONAL', 'PREMIUM_AGENCY', 'CASUAL', 'SHORT_DIRECT']) &&
+             (!('messageLength' in data) || data.messageLength in ['SHORT', 'MEDIUM', 'DETAILED']) &&
+             isValidString(data.generatedMessage, 1, 6000) &&
+             isValidOptionalString(data, 'templateName', 150) &&
+             data.status in ['DRAFT', 'AWAITING_APPROVAL', 'ELIGIBLE_TO_SEND', 'SENT', 'DELIVERED', 'READ', 'REPLIED', 'FAILED', 'NOT_ELIGIBLE'] &&
+             data.apiConfirmed is bool &&
+             isValidOptionalString(data, 'externalMessageId', 200) &&
+             isValidOptionalString(data, 'errorMessage', 1000) &&
+             isValidTimestampField(data.createdAt) &&
+             isValidTimestampField(data.updatedAt);
+    }
+
+    function isValidConversationThread(data, userId) {
+      return data.userId == userId &&
+             isValidString(data.leadId, 1, 128) &&
+             isValidString(data.storeName, 1, 160) &&
+             data.channel in ['INSTAGRAM', 'WHATSAPP'] &&
+             isValidOptionalString(data, 'recipientHandleOrPhone', 160) &&
+             isValidOptionalString(data, 'externalConversationId', 200) &&
+             (!('isApiEligible' in data) || data.isApiEligible is bool) &&
+             (!('withinServiceWindow' in data) || data.withinServiceWindow is bool) &&
+             isValidOptionalString(data, 'lastMessagePreview', 1000) &&
+             (!('lastMessageDirection' in data) || data.lastMessageDirection in ['INBOUND', 'OUTBOUND']) &&
+             data.deliveryStatus in ['PENDING', 'SENT', 'DELIVERED', 'READ', 'REPLIED', 'FAILED', 'MANUAL_ONLY'] &&
+             (!('unreadCount' in data) || (data.unreadCount is int && data.unreadCount >= 0 && data.unreadCount <= 10000)) &&
+             isValidOptionalString(data, 'aiSuggestedReply', 4000) &&
+             isValidBoundedStringList(data, 'aiSuggestedServices', 10) &&
+             isValidOptionalString(data, 'aiDetectedIntent', 80) &&
+             (!('needsHumanHandoff' in data) || data.needsHumanHandoff is bool) &&
+             (!('followUpNeeded' in data) || data.followUpNeeded is bool) &&
+             isValidTimestampField(data.createdAt) &&
+             isValidTimestampField(data.updatedAt);
+    }
+
+    function isValidChatMessage(data, userId, conversationId) {
+      return data.userId == userId &&
+             data.conversationId == conversationId &&
+             isValidString(data.leadId, 1, 128) &&
+             data.channel in ['INSTAGRAM', 'WHATSAPP'] &&
+             data.direction in ['INBOUND', 'OUTBOUND'] &&
+             isValidString(data.body, 1, 6000) &&
+             isValidOptionalString(data, 'senderName', 160) &&
+             data.status in ['DRAFT', 'SENT', 'DELIVERED', 'READ', 'FAILED', 'RECEIVED'] &&
+             data.apiConfirmed is bool &&
+             isValidOptionalString(data, 'externalMessageId', 200) &&
+             (!('aiGenerated' in data) || data.aiGenerated is bool) &&
+             isValidTimestampField(data.createdAt);
+    }
+
+    function isValidChannelIntegration(data, userId) {
+      return data.userId == userId &&
+             data.channel in ['INSTAGRAM', 'WHATSAPP'] &&
+             data.connectionStatus in ['CONNECTED', 'TOKEN_EXPIRED', 'DISCONNECTED'] &&
+             isValidOptionalString(data, 'accountName', 160) &&
+             isValidOptionalString(data, 'accountHandleOrPhone', 160) &&
+             isValidOptionalString(data, 'profileImageUrl', 500) &&
+             isValidOptionalString(data, 'businessAccountId', 128) &&
+             isValidOptionalString(data, 'phoneNumberId', 128) &&
+             isValidOptionalString(data, 'wabaId', 128) &&
+             isValidBoundedStringList(data, 'permissions', 15) &&
+             (!('webhookVerified' in data) || data.webhookVerified is bool) &&
+             isValidBoundedStringList(data, 'approvedTemplates', 25) &&
+             (!('tokenExpiresAtMillis' in data) || data.tokenExpiresAtMillis is int) &&
+             isValidTimestampField(data.createdAt) &&
+             isValidTimestampField(data.updatedAt);
+    }
+
+    // 1. User Profile
+    match /users/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow list: if false;
+
+      allow create: if isOwner(userId) && isValidId(userId) &&
+                       incoming().keys().hasAll(['userId', 'displayName', 'aiAssistantMode', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['userId', 'displayName', 'email', 'aiAssistantMode', 'createdAt', 'updatedAt']) &&
+                       isValidUserProfile(incoming(), userId);
+
+      allow update: if isOwner(userId) && isValidId(userId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       isValidUserProfile(incoming(), userId) &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'email', 'aiAssistantMode', 'updatedAt']);
+
+      allow delete: if isOwner(userId) && isValidId(userId);
+
+      // 2. Shopify Leads
+      match /leads/{leadId} {
+        allow get: if isOwner(userId) && isValidId(leadId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId) && isValidId(leadId) &&
+                         incoming().keys().hasAll(['userId', 'storeName', 'websiteUrl', 'crmStage', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly([
+                           'userId', 'storeName', 'websiteUrl', 'niche', 'location',
+                           'publicEmail', 'publicPhone', 'instagramUsername', 'instagramProfileUrl',
+                           'instagramUserId', 'whatsappNumber', 'whatsappBusinessName',
+                           'whatsappHasConsent', 'whatsappOptedOut', 'whatsappWithinWindow',
+                           'instagramApiEligible', 'crmStage', 'auditScore', 'auditSummary',
+                           'auditOpportunities', 'auditSignals', 'instagramStatus', 'whatsappStatus',
+                           'lastContactChannel', 'lastContactAt', 'followUpNeeded',
+                           'needsHumanHandoff', 'prospectIntent', 'manualOutreachNotes',
+                           'createdAt', 'updatedAt'
+                         ]) &&
+                         isValidShopifyLead(incoming(), userId);
+
+        allow update: if isOwner(userId) && isValidId(leadId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         isValidShopifyLead(incoming(), userId) &&
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'storeName', 'websiteUrl', 'niche', 'location',
+                           'publicEmail', 'publicPhone', 'instagramUsername', 'instagramProfileUrl',
+                           'instagramUserId', 'whatsappNumber', 'whatsappBusinessName',
+                           'whatsappHasConsent', 'whatsappOptedOut', 'whatsappWithinWindow',
+                           'instagramApiEligible', 'crmStage', 'auditScore', 'auditSummary',
+                           'auditOpportunities', 'auditSignals', 'instagramStatus', 'whatsappStatus',
+                           'lastContactChannel', 'lastContactAt', 'followUpNeeded',
+                           'needsHumanHandoff', 'prospectIntent', 'manualOutreachNotes',
+                           'updatedAt'
+                         ]);
+
+        allow delete: if isOwner(userId) && isValidId(leadId);
+      }
+
+      // 3. Outreach Drafts
+      match /outreachDrafts/{draftId} {
+        allow get: if isOwner(userId) && isValidId(draftId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId) && isValidId(draftId) &&
+                         incoming().keys().hasAll(['userId', 'leadId', 'channel', 'generatedMessage', 'status', 'apiConfirmed', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly([
+                           'userId', 'leadId', 'channel', 'greeting', 'businessName',
+                           'websiteName', 'websiteProblems', 'recommendedImprovements',
+                           'serviceIntroduction', 'callToAction', 'tone', 'messageLength',
+                           'generatedMessage', 'templateName', 'status', 'apiConfirmed',
+                           'externalMessageId', 'errorMessage', 'createdAt', 'updatedAt'
+                         ]) &&
+                         isValidOutreachDraft(incoming(), userId);
+
+        allow update: if isOwner(userId) && isValidId(draftId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().leadId == existing().leadId &&
+                         incoming().channel == existing().channel &&
+                         incoming().createdAt == existing().createdAt &&
+                         isValidOutreachDraft(incoming(), userId) &&
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'greeting', 'businessName', 'websiteName', 'websiteProblems',
+                           'recommendedImprovements', 'serviceIntroduction', 'callToAction',
+                           'tone', 'messageLength', 'generatedMessage', 'templateName',
+                           'status', 'apiConfirmed', 'externalMessageId', 'errorMessage', 'updatedAt'
+                         ]);
+
+        allow delete: if isOwner(userId) && isValidId(draftId);
+      }
+
+      // 4. Unified Conversations
+      match /conversations/{conversationId} {
+        allow get: if isOwner(userId) && isValidId(conversationId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId) && isValidId(conversationId) &&
+                         incoming().keys().hasAll(['userId', 'leadId', 'storeName', 'channel', 'deliveryStatus', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly([
+                           'userId', 'leadId', 'storeName', 'channel', 'recipientHandleOrPhone',
+                           'externalConversationId', 'isApiEligible', 'withinServiceWindow',
+                           'lastMessagePreview', 'lastMessageDirection', 'deliveryStatus',
+                           'unreadCount', 'aiSuggestedReply', 'aiSuggestedServices',
+                           'aiDetectedIntent', 'needsHumanHandoff', 'followUpNeeded',
+                           'createdAt', 'updatedAt'
+                         ]) &&
+                         isValidConversationThread(incoming(), userId);
+
+        allow update: if isOwner(userId) && isValidId(conversationId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().leadId == existing().leadId &&
+                         incoming().channel == existing().channel &&
+                         incoming().createdAt == existing().createdAt &&
+                         isValidConversationThread(incoming(), userId) &&
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'storeName', 'recipientHandleOrPhone', 'externalConversationId',
+                           'isApiEligible', 'withinServiceWindow', 'lastMessagePreview',
+                           'lastMessageDirection', 'deliveryStatus', 'unreadCount',
+                           'aiSuggestedReply', 'aiSuggestedServices', 'aiDetectedIntent',
+                           'needsHumanHandoff', 'followUpNeeded', 'updatedAt'
+                         ]);
+
+        allow delete: if isOwner(userId) && isValidId(conversationId);
+
+        // 5. Messages Subcollection (append-only or status update)
+        match /messages/{messageId} {
+          allow get: if isOwner(userId) && isValidId(conversationId) && isValidId(messageId);
+          allow list: if isOwner(userId) && isValidId(conversationId);
+
+          allow create: if isOwner(userId) && isValidId(conversationId) && isValidId(messageId) &&
+                           incoming().keys().hasAll(['userId', 'conversationId', 'leadId', 'channel', 'direction', 'body', 'status', 'apiConfirmed', 'createdAt']) &&
+                           incoming().keys().hasOnly([
+                             'userId', 'conversationId', 'leadId', 'channel', 'direction',
+                             'body', 'senderName', 'status', 'apiConfirmed',
+                             'externalMessageId', 'aiGenerated', 'createdAt'
+                           ]) &&
+                           isValidChatMessage(incoming(), userId, conversationId);
+
+          allow update: if isOwner(userId) && isValidId(conversationId) && isValidId(messageId) &&
+                           incoming().userId == existing().userId &&
+                           incoming().conversationId == existing().conversationId &&
+                           incoming().createdAt == existing().createdAt &&
+                           isValidChatMessage(incoming(), userId, conversationId) &&
+                           incoming().diff(existing()).affectedKeys().hasOnly(['status', 'apiConfirmed', 'externalMessageId']);
+
+          allow delete: if isOwner(userId) && isValidId(conversationId) && isValidId(messageId);
+        }
+      }
+
+      // 6. Channel Integrations (non-secret metadata)
+      match /integrations/{channelId} {
+        allow get: if isOwner(userId) && isValidId(channelId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId) && isValidId(channelId) &&
+                         incoming().keys().hasAll(['userId', 'channel', 'connectionStatus', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly([
+                           'userId', 'channel', 'connectionStatus', 'accountName',
+                           'accountHandleOrPhone', 'profileImageUrl', 'businessAccountId',
+                           'phoneNumberId', 'wabaId', 'permissions', 'webhookVerified',
+                           'approvedTemplates', 'tokenExpiresAtMillis', 'createdAt', 'updatedAt'
+                         ]) &&
+                         isValidChannelIntegration(incoming(), userId);
+
+        allow update: if isOwner(userId) && isValidId(channelId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().channel == existing().channel &&
+                         incoming().createdAt == existing().createdAt &&
+                         isValidChannelIntegration(incoming(), userId) &&
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'connectionStatus', 'accountName', 'accountHandleOrPhone',
+                           'profileImageUrl', 'businessAccountId', 'phoneNumberId',
+                           'wabaId', 'permissions', 'webhookVerified', 'approvedTemplates',
+                           'tokenExpiresAtMillis', 'updatedAt'
+                         ]);
+
+        allow delete: if isOwner(userId) && isValidId(channelId);
+      }
+    }
+  }
+}

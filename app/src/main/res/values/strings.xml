@@ -1,0 +1,26 @@
+<resources>
+    <string name="app_name">LeadFinder AI</string>
+    <string name="auth_badge">SHOPIFY LEAD FINDER AI • MODULE 20</string>
+    <string name="auth_headline">Turn Shopify Store Audits into Qualified Conversations</string>
+    <string name="auth_subtitle">Scan US Shopify storefronts, uncover real UX &amp; CRO opportunities with Gemini AI, and run policy-compliant Instagram &amp; WhatsApp Business outreach from one command center.</string>
+    <string name="auth_feature_audit_title">Live AI Website Audits</string>
+    <string name="auth_feature_audit_desc">Fetches real storefront HTML &amp; catalog signals before generating 3–5 tailored opportunities.</string>
+    <string name="auth_feature_outreach_title">Official IG &amp; WhatsApp APIs</string>
+    <string name="auth_feature_outreach_desc">Respects Meta 24h windows, opt-in consent, approved templates, and manual fallback flows.</string>
+    <string name="auth_feature_compliance_title">Unified Inbox &amp; CRM Analytics</string>
+    <string name="auth_feature_compliance_desc">AI Conversation Assistant, human handoff, and verified delivery tracking.</string>
+    <string name="auth_sign_in_google">Sign in with Google</string>
+    <string name="auth_signing_in">Signing in…</string>
+    <string name="cd_auth_hero">LeadFinder AI Command Center Illustration</string>
+    <string name="cd_empty_leads">Discover and audit your first Shopify store</string>
+    <string name="nav_discover">Discover</string>
+    <string name="nav_outreach">Outreach</string>
+    <string name="nav_inbox">Inbox</string>
+    <string name="nav_analytics">Analytics</string>
+    <string name="nav_channels">Channels</string>
+    <string name="apk_section_title">App Build &amp; APK Export</string>
+    <string name="apk_section_subtitle">Inspect the installed Android package and save or share a backup APK copy without extra storage permissions.</string>
+    <string name="apk_save_copy">Save APK Copy</string>
+    <string name="apk_share_file">Share APK</string>
+    <string name="apk_export_tip">Need an APK directly from your browser? Open AI Studio Settings / Export and choose Generate APK.</string>
+</resources>

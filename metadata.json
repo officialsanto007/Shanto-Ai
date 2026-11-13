@@ -1,0 +1,6 @@
+{
+  "name": "LeadFinder AI",
+  "description": "AI-powered Shopify store prospecting, website audit, and official Instagram & WhatsApp Business outreach automation platform.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
